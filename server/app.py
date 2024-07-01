@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 from models import db, Restaurant, RestaurantPizza, Pizza
 from flask_migrate import Migrate
-from flask import Flask, request, make_response,jsonify
+from flask import Flask, request, make_response, jsonify
 from flask_restful import Api, Resource
 import os
-from sqlalchemy.exc import SQLAlchemyError
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.environ.get("DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}")
@@ -25,54 +24,63 @@ api = Api(app)
 def index():
     return "<h1>Code challenge</h1>"
 
-@app.route("/restaurants", methods=["GET"])
-def get_restaurants():
-    restaurants = Restaurant.query.all()
-    return jsonify([restaurant.to_dict() for restaurant in restaurants])
 
-@app.route("/restaurants/<int:id>", methods=["GET"])
-def get_restaurant(id):
-    restaurant = Restaurant.query.get_or_404(id, description="Restaurant not found")
-    return jsonify(restaurant.to_dict())
+class Restaurants(Resource):
+    def get(self):
+        restaurants = Restaurant.query.all()
+        return [restaurant.to_dict(only=("id", "name", "address")) for restaurant in restaurants], 200
 
-@app.route("/restaurants/<int:id>", methods=["DELETE"])
-def delete_restaurant(id):
-    restaurant = Restaurant.query.get_or_404(id, description="Restaurant not found")
-    try:
+
+class RestaurantById(Resource):
+    def get(self, id):
+        restaurant = Restaurant.query.filter_by(id=id).first()
+        if not restaurant:
+            return {"error": "Restaurant not found"}, 404
+        return restaurant.to_dict(rules=("-restaurant_pizzas.restaurant", "restaurant_pizzas.pizza")), 200
+
+    def delete(self, id):
+        restaurant = Restaurant.query.filter_by(id=id).first()
+        if not restaurant:
+            return {"error": "Restaurant not found"}, 404
+
         db.session.delete(restaurant)
         db.session.commit()
-        return make_response("")
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)})
+        return {}, 204
 
-@app.route("/pizzas", methods=["GET"])
-def get_pizzas():
-    pizzas = Pizza.query.all()
-    return jsonify([pizza.to_dict() for pizza in pizzas])
 
-@app.route("/restaurant_pizzas", methods=["POST"])
-def create_restaurant_pizza():
-    data = request.get_json()
-    if not all(key in data for key in ["price", "pizza_id", "restaurant_id"]):
-        return jsonify({"error": "Missing required fields"})
+class Pizzas(Resource):
+    def get(self):
+        pizzas = Pizza.query.all()
+        return [pizza.to_dict(only=("id", "name", "ingredients")) for pizza in pizzas], 200
 
-    try:
-        restaurant_pizza = RestaurantPizza(
-            price=data["price"],
-            pizza_id=data["pizza_id"],
-            restaurant_id=data["restaurant_id"]
-        )
-        db.session.add(restaurant_pizza)
-        db.session.commit()
-        return jsonify(restaurant_pizza.to_dict()), 201
-    except ValueError as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)})
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)})
 
+class RestaurantPizzas(Resource):
+    def post(self):
+        data = request.get_json()
+        try:
+            new_restaurant_pizza = RestaurantPizza(
+                price=data['price'],
+                pizza_id=data['pizza_id'],
+                restaurant_id=data['restaurant_id']
+            )
+            db.session.add(new_restaurant_pizza)
+            db.session.commit()
+            return new_restaurant_pizza.to_dict(
+                rules=(
+                    "-restaurant.restaurant_pizzas",
+                    "restaurant.id", "restaurant.name", "restaurant.address",
+                    "-pizza.restaurant_pizzas",
+                    "pizza.id", "pizza.name", "pizza.ingredients"
+                )
+            ), 201
+        except ValueError:
+            return {"errors": ["validation errors"]}, 400
+
+
+api.add_resource(Restaurants, '/restaurants')
+api.add_resource(RestaurantById, '/restaurants/<int:id>')
+api.add_resource(Pizzas, '/pizzas')
+api.add_resource(RestaurantPizzas, '/restaurant_pizzas')
 
 
 if __name__ == "__main__":
