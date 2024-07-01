@@ -14,17 +14,12 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.json.compact = False
 
 migrate = Migrate(app, db)
-
 db.init_app(app)
-
 api = Api(app)
-
 
 @app.route("/")
 def index():
     return "<h1>Code challenge</h1>"
-
-
 class Restaurants(Resource):
     def get(self):
         restaurants = Restaurant.query.all()
@@ -37,7 +32,6 @@ class RestaurantById(Resource):
         if not restaurant:
             return {"error": "Restaurant not found"}, 404
         return restaurant.to_dict(rules=("-restaurant_pizzas.restaurant", "restaurant_pizzas.pizza")), 200
-
     def delete(self, id):
         restaurant = Restaurant.query.filter_by(id=id).first()
         if not restaurant:
@@ -47,12 +41,10 @@ class RestaurantById(Resource):
         db.session.commit()
         return {}, 204
 
-
 class Pizzas(Resource):
     def get(self):
         pizzas = Pizza.query.all()
         return [pizza.to_dict(only=("id", "name", "ingredients")) for pizza in pizzas], 200
-
 
 class RestaurantPizzas(Resource):
     def post(self):
@@ -76,12 +68,10 @@ class RestaurantPizzas(Resource):
         except ValueError:
             return {"errors": ["validation errors"]}, 400
 
-
 api.add_resource(Restaurants, '/restaurants')
 api.add_resource(RestaurantById, '/restaurants/<int:id>')
 api.add_resource(Pizzas, '/pizzas')
 api.add_resource(RestaurantPizzas, '/restaurant_pizzas')
-
 
 if __name__ == "__main__":
     app.run(port=5555, debug=True)

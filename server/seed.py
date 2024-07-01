@@ -15,17 +15,23 @@ with app.app_context():
     bistro = Restaurant(name="Sanjay's Pizza", address='address2')
     palace = Restaurant(name="Kiki's Pizza", address='address3')
     restaurants = [shack, bistro, palace]
+    
 
     print("Creating pizzas...")
 
+
+
     cheese = Pizza(name="Emma", ingredients="Dough, Tomato Sauce, Cheese")
     pepperoni = Pizza(
-        name="Geri", ingredients="Dough, Tomato Sauce, Cheese, Pepperoni")
+        name="Geri", ingredients="Dough, Tomato Sauce, Cheese, Pepperoni")#
     california = Pizza(
         name="Melanie", ingredients="Dough, Sauce, Ricotta, Red peppers, Mustard")
     pizzas = [cheese, pepperoni, california]
 
+
     print("Creating RestaurantPizza...")
+
+
 
     pr1 = RestaurantPizza(restaurant=shack, pizza=cheese, price=1)
     pr2 = RestaurantPizza(restaurant=bistro, pizza=pepperoni, price=4)
@@ -35,5 +41,7 @@ with app.app_context():
     db.session.add_all(pizzas)
     db.session.add_all(restaurantPizzas)
     db.session.commit()
+
+
 
     print("Seeding done!")
