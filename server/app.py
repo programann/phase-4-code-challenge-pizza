@@ -28,30 +28,30 @@ def index():
 class Restaurants(Resource):
     def get(self):
         restaurants = Restaurant.query.all()
-        return [restaurant.to_dict(only=("id", "name", "address")) for restaurant in restaurants], 200
+        return [restaurant.to_dict(only=("id", "name", "address")) for restaurant in restaurants]
 
 
 class RestaurantById(Resource):
     def get(self, id):
         restaurant = Restaurant.query.filter_by(id=id).first()
         if not restaurant:
-            return {"error": "Restaurant not found"}, 404
-        return restaurant.to_dict(rules=("-restaurant_pizzas.restaurant", "restaurant_pizzas.pizza")), 200
+            return {"error": "Restaurant not found"}
+        return restaurant.to_dict(rules=("-restaurant_pizzas.restaurant", "restaurant_pizzas.pizza"))
 
     def delete(self, id):
         restaurant = Restaurant.query.filter_by(id=id).first()
         if not restaurant:
-            return {"error": "Restaurant not found"}, 404
+            return {"error": "Restaurant not found"}
 
         db.session.delete(restaurant)
         db.session.commit()
-        return {}, 204
+        return {}
 
 
 class Pizzas(Resource):
     def get(self):
         pizzas = Pizza.query.all()
-        return [pizza.to_dict(only=("id", "name", "ingredients")) for pizza in pizzas], 200
+        return [pizza.to_dict(only=("id", "name", "ingredients")) for pizza in pizzas]
 
 
 class RestaurantPizzas(Resource):
@@ -72,9 +72,9 @@ class RestaurantPizzas(Resource):
                     "-pizza.restaurant_pizzas",
                     "pizza.id", "pizza.name", "pizza.ingredients"
                 )
-            ), 201
+            )
         except ValueError:
-            return {"errors": ["validation errors"]}, 400
+            return {"errors": ["validation errors"]}
 
 
 api.add_resource(Restaurants, '/restaurants')
