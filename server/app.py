@@ -41,10 +41,10 @@ def delete_restaurant(id):
     try:
         db.session.delete(restaurant)
         db.session.commit()
-        return make_response("", 204)
+        return make_response("")
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
 
 @app.route("/pizzas", methods=["GET"])
 def get_pizzas():
@@ -55,7 +55,7 @@ def get_pizzas():
 def create_restaurant_pizza():
     data = request.get_json()
     if not all(key in data for key in ["price", "pizza_id", "restaurant_id"]):
-        return jsonify({"error": "Missing required fields"}), 400
+        return jsonify({"error": "Missing required fields"})
 
     try:
         restaurant_pizza = RestaurantPizza(
@@ -68,10 +68,10 @@ def create_restaurant_pizza():
         return jsonify(restaurant_pizza.to_dict()), 201
     except ValueError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)})
     except SQLAlchemyError as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
 
 
 
